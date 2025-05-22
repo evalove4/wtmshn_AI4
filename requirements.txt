@@ -1,0 +1,12 @@
+streamlit
+langchain
+langchain-community
+langchain-openai
+langchain-core
+langchain-text-splitters
+langchain-chroma
+unstructured
+pysqlite3-binary
+protobuf==3.20.0
+markdown
+pypdf
