@@ -42,6 +42,7 @@ class AdvancedRAGSystem:
         self.chat_history = []
         self.feedback_data = []
         self.query_analytics = {}
+        self._docs_cache = None  # 문서 캐시 추가
         
     def initialize(self):
         """시스템 초기화"""
@@ -52,8 +53,8 @@ class AdvancedRAGSystem:
                 return False
             
             # 문서 로드 및 벡터스토어 생성
-            docs = self.load_and_split_documents(file_path)
-            self.vectorstore = self.create_or_load_vectorstore(docs)
+            self._docs_cache = self.load_and_split_documents(file_path)
+            self.vectorstore = self.create_or_load_vectorstore()
             self.retriever = self.create_advanced_retriever()
             self.rag_chain = self.create_rag_chain()
             
@@ -65,8 +66,7 @@ class AdvancedRAGSystem:
             st.error(f"❌ 시스템 초기화 실패: {e}")
             return False
     
-    @st.cache_data
-    def load_and_split_documents(_self, file_path: str) -> List[Document]:
+    def load_and_split_documents(self, file_path: str) -> List[Document]:
         """문서 로드 및 분할"""
         loader = UnstructuredMarkdownLoader(file_path)
         documents = loader.load()
@@ -93,7 +93,7 @@ class AdvancedRAGSystem:
         return split_docs
     
     @st.cache_resource
-    def create_or_load_vectorstore(_self, docs: List[Document]):
+    def create_or_load_vectorstore(_self):
         """벡터스토어 생성 또는 로드"""
         persist_directory = "/tmp/chroma_db"
         
@@ -115,8 +115,12 @@ class AdvancedRAGSystem:
                 st.warning(f"기존 벡터스토어 로드 실패: {e}")
         
         # 새로운 벡터스토어 생성
+        if _self._docs_cache is None:
+            st.error("문서가 로드되지 않았습니다.")
+            return None
+            
         vectorstore = Chroma.from_documents(
-            documents=docs,
+            documents=_self._docs_cache,
             embedding=embeddings,
             persist_directory=persist_directory,
             collection_metadata={"hnsw:space": "cosine"}
